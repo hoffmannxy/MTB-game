@@ -156,16 +156,24 @@ $('btn-pause')?.addEventListener('click', () => { if (state === 'ride') { state 
 // ---------- Kamera ----------
 const camPos = new THREE.Vector3();
 const camLook = new THREE.Vector3();
-let camInit = false;
+let camInit = false, camYaw = 0, camY = 0;
 function updateCamera(dt) {
-  const f = bike.forward(new THREE.Vector3());
+  // Kamera dreht gedämpft hinterher und federt Höhenänderungen ab
+  let dy = bike.yaw - camYaw;
+  while (dy > Math.PI) dy -= Math.PI * 2;
+  while (dy < -Math.PI) dy += Math.PI * 2;
+  if (!camInit) { camYaw = bike.yaw; dy = 0; camY = bike.pos.y; }
+  camYaw += dy * (1 - Math.exp(-(bike.crashed ? 1.5 : 4.5) * dt));
+  camY += (bike.pos.y - camY) * (1 - Math.exp(-5 * dt));
+  const f = new THREE.Vector3(Math.sin(camYaw), 0, -Math.cos(camYaw));
   const target = bike.pos.clone().addScaledVector(f, -5.6);
-  target.y = Math.max(target.y, bike.pos.y) + 2.8;
-  const look = bike.pos.clone().addScaledVector(f, 4).add(new THREE.Vector3(0, 0.9, 0));
+  target.y = Math.max(camY, bike.pos.y - 1.5) + 2.8;
+  const look = bike.pos.clone().addScaledVector(f, 4);
+  look.y = camY + 0.9 + (bike.pos.y - camY) * 0.5;
   if (!camInit) { camPos.copy(target); camLook.copy(look); camInit = true; }
-  const k = 1 - Math.exp(-(bike.crashed ? 2 : 6) * dt);
+  const k = 1 - Math.exp(-(bike.crashed ? 2 : 7) * dt);
   camPos.lerp(target, k);
-  camLook.lerp(look, 1 - Math.exp(-10 * dt));
+  camLook.lerp(look, 1 - Math.exp(-9 * dt));
   camera.position.copy(camPos);
   camera.lookAt(camLook);
 }
@@ -244,6 +252,7 @@ function loop(now) {
 
   if (trickTimer > 0) { trickTimer -= dt; if (trickTimer <= 0) show(ui.trick, false); }
 
+  document.body.classList.toggle('in-air', state === 'ride' && !bike.grounded && bike.airTime > 0.15 && !bike.crashed);
   bike.updateVisual(dt);
   sun.position.set(bike.pos.x - 40, bike.pos.y + 80, bike.pos.z + 30);
   sun.target.position.copy(bike.pos); sun.target.updateMatrixWorld();

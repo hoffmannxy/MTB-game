@@ -27,7 +27,7 @@ iPhone: Einstellungen → Bluetooth. Am Xbox-Controller die Koppeltaste oben ged
 | ≡ Menü | Esc / P | Pause |
 | B | Backspace | zurück zur Streckenwahl (in Pause/Ziel) |
 
-Ohne Controller erscheint auf dem iPhone eine Touch-Steuerung.
+Ohne Controller erscheint auf dem iPhone eine Touch-Steuerung. Dort macht TRICK allein in der Luft einen Backflip, TRICK + Stick-Richtung wählt den Trick (wie LB + rechter Stick). Auf der Tastatur entsprechend Shift allein bzw. Shift + Pfeile.
 
 ## Strecken
 

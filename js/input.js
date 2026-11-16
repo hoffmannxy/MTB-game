@@ -128,10 +128,11 @@ export function pollInput() {
     const kL = k('ArrowLeft') || k('KeyA'), kR = k('ArrowRight') || k('KeyD');
     const kU = k('ArrowUp') || k('KeyW'), kD = k('ArrowDown') || k('KeyS');
     const shift = k('ShiftLeft') || k('ShiftRight');
-    if (shift) {                         // Shift + Pfeile = Tricks
+    if (shift) {                         // Shift + Pfeile = Tricks, Shift allein = Backflip
       trick = true;
       rx += (kR ? 1 : 0) - (kL ? 1 : 0);
       ry += (kD ? 1 : 0) - (kU ? 1 : 0);
+      if (!kL && !kR && !kU && !kD) ry += 1;
     } else {
       steer += (kR ? 1 : 0) - (kL ? 1 : 0);
       if (kU) thr = 1;
@@ -149,7 +150,12 @@ export function pollInput() {
   // Touch
   if (touch.stickId !== null || touch.gas || touch.brake || touch.hop || touch.trick || touch.a) {
     input.source = 'touch';
-    if (touch.trick) { trick = true; rx += touch.x; ry += touch.y; }
+    if (touch.trick) {
+      trick = true;
+      // TRICK allein = Backflip, mit Stick-Richtung = gewählter Trick
+      if (Math.abs(touch.x) < 0.3 && Math.abs(touch.y) < 0.3) ry += 1;
+      else { rx += touch.x; ry += touch.y; }
+    }
     else steer += touch.x;
     if (touch.gas) thr = 1;
     if (touch.brake) brk = 1;

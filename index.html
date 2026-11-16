@@ -84,6 +84,9 @@
   .t-btn { pointer-events: auto; position: absolute; width: 74px; height: 74px; border-radius: 50%; display: flex; align-items: center;
     justify-content: center; font-weight: 900; font-size: 12px; background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.3); }
   .t-btn.on { background: rgba(255,210,63,.55); }
+  body.in-air #t-trick { border-color: var(--c); animation: trickpulse .5s infinite alternate; }
+  @keyframes trickpulse { from { box-shadow: 0 0 0 0 rgba(255,210,63,.6); } to { box-shadow: 0 0 0 10px rgba(255,210,63,0); } }
+  .t-btn small { display: block; font-size: 9px; font-weight: 600; opacity: .75; }
   #t-gas { right: max(24px, env(safe-area-inset-right)); bottom: 110px; }
   #t-brake { right: calc(max(24px, env(safe-area-inset-right)) + 88px); bottom: 30px; }
   #t-hop { right: max(24px, env(safe-area-inset-right)); bottom: 24px; }
@@ -120,7 +123,7 @@
   <div class="t-btn" id="t-gas">TRETEN</div>
   <div class="t-btn" id="t-brake">BREMSE</div>
   <div class="t-btn" id="t-hop">HOP</div>
-  <div class="t-btn" id="t-trick">TRICK</div>
+  <div class="t-btn" id="t-trick"><span>TRICK<small>+ Stick</small></span></div>
 </div>
 
 <div id="title" class="overlay">

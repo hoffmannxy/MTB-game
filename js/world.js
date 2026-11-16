@@ -116,7 +116,8 @@ export function setTrack(def) {
     pts = resample(out, 1);
     if (!bad) break;
   }
-  pts = smoothPts(pts, def.heightSmooth, [2]);
+  // Höhenprofil mehrfach glätten (fast wie Gauß-Filter) -> keine Dellen
+  for (let pass = 0; pass < 3; pass++) pts = smoothPts(pts, Math.round(def.heightSmooth / 2), [2]);
   // Mindestgefälle, damit man nicht stehen bleibt
   if (def.minSlope) for (let i = 1; i < pts.length; i++) pts[i][2] = Math.min(pts[i][2], pts[i - 1][2] - def.minSlope);
   const y0 = pts[0][2];
@@ -144,12 +145,16 @@ export function setTrack(def) {
     track.tx[i] = dx / l; track.tz[i] = dz / l;
   }
   // Krümmung (geglättet) für Anlieger
-  const k = curvatures(all);
-  const ks = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    let s = 0, c = 0;
-    for (let j = -6; j <= 6; j++) { const q = i + j; if (q >= 0 && q < n) { s += k[q]; c++; } }
-    ks[i] = s / c;
+  // breit geglättet, damit die Fahrbahn nicht bei jeder kleinen Richtungsänderung kippt
+  let ks = curvatures(all);
+  for (let pass = 0; pass < 3; pass++) {
+    const nk = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      let s = 0, c = 0;
+      for (let j = -10; j <= 10; j++) { const q = i + j; if (q >= 0 && q < n) { s += ks[q]; c++; } }
+      nk[i] = s / c;
+    }
+    ks = nk;
   }
   track.kap = ks;
 
@@ -183,7 +188,7 @@ function buildFeatures(def) {
       const H = (1.2 + rnd() * 1.6) * sz;
       feat = { type: 'table', s0: s, H, Lk: H * (5.5 + rnd() * 1.5), G: (5 + rnd() * 5) * sz, Ll: 18 + rnd() * 5 };
     } else if (kind === 'drop') feat = { type: 'drop', s0: s, D: (1.2 + rnd() * 1.2) * sz };
-    else feat = { type: 'rollers', s0: s, n: 4 + Math.floor(rnd() * 3), A: 0.45 + rnd() * 0.3, W: 6 + rnd() * 2 };
+    else feat = { type: 'rollers', s0: s, n: 3 + Math.floor(rnd() * 2), A: 0.22 + rnd() * 0.15, W: 8 + rnd() * 2 };
     const a = feat.type === 'table' ? s - feat.Lk - 5 : feat.type === 'drop' ? s - 20 : s - 3;
     const b = feat.type === 'table' ? s + feat.G + feat.Ll + 5 : feat.type === 'drop' ? s + 20 : s + feat.n * feat.W + 3;
     if (b < track.length - 5 && straightEnough(a, b)) {
@@ -272,8 +277,9 @@ function trackSurface(hit) {
   if (s > 0 && s < track.length) y += featureHeight(s);
   // Anlieger: Außenseite der Kurve höher (u>0 = rechts; Linkskurve -> rechts höher)
   // k > 0 = Rechtskurve -> links (u < 0) ist außen und wird angehoben
-  const k = interp(track.kap, hit.idx);
-  const bank = Math.max(-0.65, Math.min(0.65, -k * track.def.bank * 1.7));
+  const kRaw = interp(track.kap, hit.idx);
+  const k0 = 1 / 45, k = (kRaw * kRaw * kRaw) / (kRaw * kRaw + k0 * k0);   // sanft: nur echte Kurven kippen
+  const bank = -0.45 * Math.tanh((k * track.def.bank * 1.7) / 0.45);     // weich begrenzt, kein Knick
   let uu = Math.max(-7, Math.min(7, hit.u));
   if (uu * k > 0) uu = Math.max(-TRACK_HALF, Math.min(TRACK_HALF, uu));   // Innenseite nicht absenken
   y += bank * uu;
@@ -328,8 +334,8 @@ function bilinear(arr, x, z) {
 }
 function terrainHeight(x, z) {
   const d = bilinear(track.terrainD, x, z);
-  const ramp = Math.min(1, Math.max(0, (d - 8) / 30));
-  return bilinear(track.terrain, x, z) + (noise2(x / 45, z / 45) * 9 + noise2(x / 14, z / 14) * 2.5 - 5.75) * ramp;
+  const ramp = Math.min(1, Math.max(0, (d - 12) / 40));
+  return bilinear(track.terrain, x, z) + (noise2(x / 50, z / 50) * 8 + noise2(x / 18, z / 18) * 1.2 - 4.6) * ramp;
 }
 
 // ---------- Öffentliche Abfragen ----------

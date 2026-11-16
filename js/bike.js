@@ -95,6 +95,7 @@ export class Bike {
     this.flip = 0; this.spin = 0;          // Trick-Rotationen (rad)
     this.flipVel = 0; this.spinVel = 0;
     this.leanVis = 0; this.crouch = 0;
+    this.steerS = 0;                      // geglättete Lenkung
     this.charge = 0; this.wasCharging = false;
     this.absorb = false;
     this.crashed = false; this.crashT = 0;
@@ -126,6 +127,10 @@ export class Bike {
       if (this.pos.y < h) { this.pos.y = h; this.vel.y = 0; this.vel.multiplyScalar(Math.exp(-2.5 * dt)); }
       return;
     }
+
+    // Lenkung weich machen: feine Kontrolle bei kleinen Ausschlägen, sanftes Ein- und Auslenken
+    const target = Math.sign(inp.steer) * Math.pow(Math.abs(inp.steer), 1.5);
+    this.steerS += (target - this.steerS) * (1 - Math.exp(-7 * dt));
 
     if (this.grounded) this.groundStep(dt, inp, f);
     else this.airStep(dt, inp, f);
@@ -183,7 +188,7 @@ export class Bike {
     vf = v.dot(fw);
     const sp = Math.abs(vf);
     const rate = (2.4 / (1 + sp * 0.07)) * Math.min(1, 0.25 + sp / 3) + this.slide * 1.2;
-    this.yaw += inp.steer * rate * dt * (vf < -0.3 ? -1 : 1) + slideIn * 0.9 * dt;
+    this.yaw += this.steerS * rate * dt * (vf < -0.3 ? -1 : 1) + slideIn * 0.9 * dt;
 
     // Bunnyhop: rechter Stick runter (aufladen), dann loslassen oder hoch
     const charging = inp.ry > 0.5 && !inp.trick;
@@ -199,7 +204,7 @@ export class Bike {
     this.absorb = inp.ry < -0.5 && !inp.trick;
 
     this.crouch += ((charging ? 1 : this.absorb ? 0.6 : 0) - this.crouch) * Math.min(1, 10 * dt);
-    this.leanVis += (-inp.steer * Math.min(0.55, sp * 0.05) - this.leanVis) * Math.min(1, 6 * dt);
+    this.leanVis += (-this.steerS * Math.min(0.55, sp * 0.05) - this.leanVis) * Math.min(1, 5 * dt);
 
     if (!this.grounded) { this.pos.addScaledVector(v, dt); return; }
 
@@ -244,7 +249,7 @@ export class Bike {
 
     // Luftsteuerung (leicht)
     // kurze Hüpfer fühlen sich wie Boden an, lange Sprünge nur leicht steuerbar
-    this.yaw += inp.steer * (this.airTime < 0.25 ? 1.8 : 0.9) * dt;
+    this.yaw += this.steerS * (this.airTime < 0.25 ? 1.8 : 0.9) * dt;
 
     // Tricks: LB + rechter Stick
     const tf = inp.trick ? inp.ry : 0;   // hoch (−) = Frontflip, runter (+) = Backflip
