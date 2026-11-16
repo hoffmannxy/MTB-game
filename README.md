@@ -3,7 +3,7 @@
 Ein kleines Mountainbike-Downhill-Spiel für den Browser, gemacht für das iPhone im Querformat mit Xbox-Controller.
 Die Steuerung ist an Descenders angelehnt.
 
-**Spielen:** https://hoffmannxy.github.io/mtb-game/
+**Spielen:** https://hoffmannxy.github.io/MTB-game/
 
 Tipp fürs iPhone: In Safari öffnen → Teilen → „Zum Home-Bildschirm“. Dann startet das Spiel wie eine App, ohne Adressleiste.
 
