@@ -1,0 +1,10 @@
+{
+  "name": "MTB Downhill",
+  "short_name": "MTB Downhill",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0f1a12",
+  "theme_color": "#0f1a12",
+  "icons": [{ "src": "icon-180.png", "sizes": "180x180", "type": "image/png" }]
+}

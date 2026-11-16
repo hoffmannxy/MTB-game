@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MTB Downhill">
+<meta name="theme-color" content="#0f1a12">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>MTB Downhill</title>
+<style>
+  :root { --c: #ffd23f; --bg: rgba(10, 18, 12, .78); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0f1a12; color: #fff;
+    font-family: -apple-system, system-ui, "Segoe UI", sans-serif; -webkit-user-select: none; user-select: none;
+    touch-action: none; overscroll-behavior: none; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .hidden { display: none !important; }
+
+  /* HUD */
+  #hud { position: fixed; inset: 0; pointer-events: none;
+    padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 10px max(14px, env(safe-area-inset-left)); }
+  .hud-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .chip { background: var(--bg); border-radius: 12px; padding: 6px 12px; font-weight: 800; font-variant-numeric: tabular-nums;
+    font-size: 20px; letter-spacing: .5px; }
+  .chip small { font-size: 11px; font-weight: 600; opacity: .7; display: block; letter-spacing: 1px; text-transform: uppercase; }
+  #hud-progress { position: fixed; left: 50%; transform: translateX(-50%); top: max(12px, env(safe-area-inset-top));
+    width: 30vw; height: 8px; background: rgba(0,0,0,.4); border-radius: 4px; overflow: hidden; }
+  #hud-progress-bar { height: 100%; width: 0; background: var(--c); }
+  #btn-pause { pointer-events: auto; border: 0; background: var(--bg); color: #fff; border-radius: 10px; width: 40px; height: 40px;
+    font-size: 18px; font-weight: 900; }
+
+  #trick { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; font-weight: 900;
+    font-size: clamp(22px, 4.5vw, 40px); text-shadow: 0 3px 0 rgba(0,0,0,.45); pointer-events: none; white-space: nowrap; }
+  #trick span { display: block; color: var(--c); font-size: .75em; }
+  #trick.pop { animation: pop .35s cubic-bezier(.2, 1.6, .4, 1); }
+  @keyframes pop { from { transform: translateX(-50%) scale(.4); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+
+  /* Overlays */
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+    background: radial-gradient(ellipse at center, rgba(10,18,12,.55), rgba(10,18,12,.85)); padding: 16px; }
+  .panel { max-width: 760px; }
+  h1 { margin: 0; font-size: clamp(34px, 7vw, 64px); font-weight: 900; letter-spacing: 1px; line-height: 1;
+    text-shadow: 0 4px 0 rgba(0,0,0,.4); }
+  h1 em { color: var(--c); font-style: normal; }
+  .big { font-size: clamp(30px, 6vw, 54px); font-weight: 900; margin: 6px 0; }
+  .press { display: inline-block; margin-top: 14px; font-weight: 800; font-size: 20px; animation: blink 1.2s infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  .btn-a { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%;
+    background: #3dbb3d; color: #fff; font-weight: 900; margin: 0 4px; }
+  #pad-status { margin-top: 10px; font-size: 14px; opacity: .85; }
+  .controls { margin-top: 14px; display: grid; grid-template-columns: max-content max-content; gap: 3px 16px; font-size: 13px; text-align: left;
+    justify-content: center; opacity: .9; }
+  .controls b { color: var(--c); font-weight: 800; }
+  .muted { opacity: .7; font-size: 14px; }
+  #crash { background: rgba(120, 20, 10, .35); }
+  #crash-hint { transition: opacity .3s; }
+
+  /* Touch */
+  #touch { display: none; position: fixed; inset: 0; pointer-events: none; }
+  body.show-touch #touch { display: block; }
+  #t-stick { pointer-events: auto; position: absolute; left: max(28px, env(safe-area-inset-left)); bottom: 28px; width: 130px; height: 130px;
+    border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.25); }
+  #t-knob { position: absolute; left: 40px; top: 40px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,.5); }
+  .t-btn { pointer-events: auto; position: absolute; width: 74px; height: 74px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-weight: 900; font-size: 12px; background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.3); }
+  .t-btn.on { background: rgba(255,210,63,.55); }
+  #t-gas { right: max(24px, env(safe-area-inset-right)); bottom: 110px; }
+  #t-brake { right: calc(max(24px, env(safe-area-inset-right)) + 88px); bottom: 30px; }
+  #t-hop { right: max(24px, env(safe-area-inset-right)); bottom: 24px; }
+  #t-trick { right: calc(max(24px, env(safe-area-inset-right)) + 88px); bottom: 118px; }
+
+  /* Hochformat */
+  #rotate { display: none; }
+  @media (orientation: portrait) and (pointer: coarse) {
+    #rotate { display: flex; z-index: 50; background: #0f1a12; flex-direction: column; gap: 14px; font-size: 22px; font-weight: 800; }
+    #rotate .icon { font-size: 64px; animation: rot 2s infinite; }
+    @keyframes rot { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="hud-row">
+    <div class="chip"><small>Zeit</small><span id="hud-time">0:00.0</span></div>
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <div class="chip"><small>Punkte</small><span id="hud-score">0</span></div>
+      <div class="chip"><small>km/h</small><span id="hud-speed">0</span></div>
+      <button id="btn-pause" aria-label="Pause">II</button>
+    </div>
+  </div>
+  <div id="hud-progress"><div id="hud-progress-bar"></div></div>
+</div>
+<div id="trick" class="hidden"></div>
+
+<div id="touch">
+  <div id="t-stick"><div id="t-knob"></div></div>
+  <div class="t-btn" id="t-gas">TRETEN</div>
+  <div class="t-btn" id="t-brake">BREMSE</div>
+  <div class="t-btn" id="t-hop">HOP</div>
+  <div class="t-btn" id="t-trick">TRICK</div>
+</div>
+
+<div id="title" class="overlay">
+  <div class="panel">
+    <h1>MTB <em>DOWNHILL</em></h1>
+    <div class="press">Drücke <span class="btn-a">A</span> zum Starten</div>
+    <div id="pad-status">🎮 Kein Controller – drück eine Taste am Controller</div>
+    <div id="title-best" class="muted"></div>
+    <div class="controls">
+      <b>Linker Stick</b><span>lenken</span>
+      <b>RT / LT</b><span>treten / bremsen</span>
+      <b>Rechter Stick ↓ halten, loslassen</b><span>Bunnyhop (länger halten = höher)</span>
+      <b>Rechter Stick ↑ vor der Kante</b><span>Counter-Pump (flacher springen)</span>
+      <b>Rechter Stick ← →</b><span>Slide</span>
+      <b>LB + rechter Stick (in der Luft)</b><span>↑ Frontflip · ↓ Backflip · ← → Spin</span>
+      <b>Y</b><span>zurück auf die Strecke</span>
+      <b>≡ Menü</b><span>Pause</span>
+    </div>
+  </div>
+</div>
+
+<div id="pause" class="overlay hidden">
+  <div class="panel">
+    <div class="big">Pause</div>
+    <div><span class="btn-a">A</span> weiter &nbsp;·&nbsp; <span class="btn-a" style="background:#e6b800">Y</span> neu starten</div>
+  </div>
+</div>
+
+<div id="crash" class="overlay hidden" style="background:rgba(120,20,10,.25)">
+  <div class="panel">
+    <div class="big">Sturz! 💥</div>
+    <div id="crash-text"></div>
+    <div id="crash-hint" class="press" style="opacity:0"><span class="btn-a">A</span> weiterfahren</div>
+  </div>
+</div>
+
+<div id="finish" class="overlay hidden">
+  <div class="panel">
+    <div class="muted">ZIEL!</div>
+    <div class="big" id="fin-time">0:00.0</div>
+    <div><span id="fin-score">0</span> Punkte</div>
+    <div id="fin-best" class="muted" style="margin-top:6px"></div>
+    <div class="press">Drücke <span class="btn-a">A</span> für noch eine Abfahrt</div>
+  </div>
+</div>
+
+<div id="rotate" class="overlay"><div class="icon">📱</div>Bitte iPhone quer halten</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
