@@ -11,6 +11,8 @@
 //   LB + rechter Stick (in der Luft)                  -> Tricks
 //   Y                   zurück auf die Strecke
 //   A                   Start / weiter
+//   B                   zurück zur Streckenwahl (Pause/Ziel)
+//   Steuerkreuz ← →     lenken / Strecke wählen
 //   Menü (≡)            Pause
 
 const DEAD = 0.18;
@@ -21,13 +23,13 @@ export const input = {
   rx: 0, ry: 0,               // rechter Stick
   throttle: 0, brake: 0,
   trick: false,               // LB gehalten
-  a: false, y: false, menu: false,
-  aPressed: false, yPressed: false, menuPressed: false,
+  a: false, b: false, y: false, menu: false,
+  aPressed: false, bPressed: false, yPressed: false, menuPressed: false,
   source: 'none',             // 'gamepad' | 'keyboard' | 'touch'
   padName: '',
 };
 
-const prev = { a: false, y: false, menu: false };
+const prev = { a: false, b: false, y: false, menu: false };
 const keys = new Set();
 
 window.addEventListener('keydown', (e) => {
@@ -98,18 +100,20 @@ export function pollInput() {
   const pads = navigator.getGamepads ? navigator.getGamepads() : [];
   for (const p of pads) if (p && p.connected) { pad = p; break; }
 
-  let steer = 0, lean = 0, rx = 0, ry = 0, thr = 0, brk = 0, trick = false, a = false, y = false, menu = false;
+  let steer = 0, lean = 0, rx = 0, ry = 0, thr = 0, brk = 0, trick = false, a = false, b = false, y = false, menu = false;
 
   if (pad) {
-    const ax = pad.axes, b = pad.buttons;
-    const bv = (i) => (b[i] ? (typeof b[i] === 'object' ? (b[i].value || (b[i].pressed ? 1 : 0)) : b[i]) : 0);
-    const bp = (i) => (b[i] ? (typeof b[i] === 'object' ? b[i].pressed : b[i] > 0.5) : false);
+    const ax = pad.axes, btn = pad.buttons;
+    const bv = (i) => (btn[i] ? (typeof btn[i] === 'object' ? (btn[i].value || (btn[i].pressed ? 1 : 0)) : btn[i]) : 0);
+    const bp = (i) => (btn[i] ? (typeof btn[i] === 'object' ? btn[i].pressed : btn[i] > 0.5) : false);
     steer = dz(ax[0] || 0); lean = dz(ax[1] || 0);
+    if (bp(14)) steer = -1;            // Steuerkreuz links/rechts lenkt auch
+    if (bp(15)) steer = 1;
     rx = dz(ax[2] || 0); ry = dz(ax[3] || 0);
     thr = bv(7); brk = bv(6);
     trick = bp(4);
-    a = bp(0); y = bp(3); menu = bp(9);
-    if (Math.abs(steer) + Math.abs(lean) + Math.abs(rx) + Math.abs(ry) + thr + brk > 0.1 || a || y || menu || trick) {
+    a = bp(0); b = bp(1); y = bp(3); menu = bp(9);
+    if (Math.abs(steer) + Math.abs(lean) + Math.abs(rx) + Math.abs(ry) + thr + brk > 0.1 || a || b || y || menu || trick) {
       input.source = 'gamepad';
     }
     input.padName = pad.id;
@@ -138,6 +142,7 @@ export function pollInput() {
     if (k('KeyE')) rx += 1;
     if (k('Enter')) a = true;
     if (k('KeyR')) y = true;
+    if (k('Backspace') || k('KeyB')) b = true;
     if (k('Escape') || k('KeyP')) menu = true;
   }
 
@@ -158,6 +163,7 @@ export function pollInput() {
   input.rx = clamp(rx); input.ry = clamp(ry);
   input.throttle = Math.min(1, thr); input.brake = Math.min(1, brk);
   input.trick = trick;
+  input.bPressed = b && !prev.b; input.b = b; prev.b = b;
   input.aPressed = a && !prev.a; input.yPressed = y && !prev.y; input.menuPressed = menu && !prev.menu;
   input.a = a; input.y = y; input.menu = menu;
   prev.a = a; prev.y = y; prev.menu = menu;

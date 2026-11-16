@@ -25,19 +25,34 @@ iPhone: Einstellungen → Bluetooth. Am Xbox-Controller die Koppeltaste oben ged
 | Y | R | zurück auf die Strecke |
 | A | Enter | Start / weiter |
 | ≡ Menü | Esc / P | Pause |
+| B | Backspace | zurück zur Streckenwahl (in Pause/Ziel) |
 
 Ohne Controller erscheint auf dem iPhone eine Touch-Steuerung.
 
+## Strecken
+
+Auf dem Startbildschirm mit dem Stick (oder ◀ ▶) wählen:
+
+| Strecke | Länge | Quelle |
+|---|---|---|
+| Grunewald – Bolognese Trail | ca. 300 m | GPX von Trailforks, mit zusätzlichen Sprüngen |
+| Berm Park – Wildcat | ca. 1,5 km | GPX von MTB Project, mit Anliegern in den Kurven |
+| Test-Trail | ca. 1,4 km | ausgedacht |
+
+Kurven und Höhenprofil kommen aus den GPX-Dateien (geglättet). Sprünge, Drops und Wellen sind dazuerfunden.
+Neue Strecken: GPX in Meter umrechnen, in `js/gpx-data.js` ablegen und in `js/tracks.js` eintragen.
+
 ## Regeln
 
-- 1,4 km Abfahrt mit Tabletops, Drops und Wellen. Orange Fähnchen markieren die Absprünge.
+- Abfahrt mit Tabletops, Drops und Wellen. Orange Fähnchen markieren die Absprünge.
 - Flips und Spins müssen vor der Landung fertig sein, sonst gibt es einen Sturz.
-- Punkte gibt es für Tricks und Airtime. Bestzeit und Highscore werden im Browser gespeichert.
+- Punkte gibt es für Tricks und Airtime. Bestzeit und Highscore werden pro Strecke im Browser gespeichert.
 
 ## Technik
 
 - Reines HTML/JavaScript ohne Build-Schritt; [three.js](https://threejs.org) liegt unter `lib/`.
-- `js/world.js` – Strecke, Gelände, Bäume, Hindernisse (Höhenfunktion)
+- `js/tracks.js`, `js/gpx-data.js` – Streckendefinitionen
+- `js/world.js` – Strecke, Gelände, Anlieger, Bäume, Hindernisse (Höhenfunktion)
 - `js/bike.js` – Bike-Modell und Fahrphysik
 - `js/input.js` – Controller, Tastatur, Touch
 - `js/main.js` – Spielablauf, Kamera, HUD

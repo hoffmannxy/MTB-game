@@ -1,6 +1,6 @@
 // Bike: 3D-Modell und Fahrphysik (arcade, aber mit echter Schwerkraft und Sprüngen)
 import * as THREE from 'three';
-import { height, normalAt, onTrack, treeNear, trackYaw, centerX } from './world.js';
+import { height, normalAt, onTrack, treeNear, pointAt } from './world.js';
 import { rumble } from './input.js';
 
 const G = 9.81;
@@ -81,14 +81,15 @@ export class Bike {
     this.pos = new THREE.Vector3();
     this.vel = new THREE.Vector3();
     this.n = new THREE.Vector3(0, 1, 0);
-    this.reset(0, true);
+    this.reset(0);
   }
 
-  reset(z, atStart = false) {
-    const x = centerX(z);
-    this.pos.set(x, height(x, z), z);
+  // s = Meter ab Start auf der Strecke
+  reset(s = 0) {
+    const p = pointAt(s);
+    this.pos.set(p.x, p.y, p.z);
     this.vel.set(0, 0, 0);
-    this.yaw = trackYaw(z);
+    this.yaw = p.yaw;
     this.grounded = true;
     this.airTime = 0;
     this.flip = 0; this.spin = 0;          // Trick-Rotationen (rad)
@@ -101,7 +102,6 @@ export class Bike {
     this.events = [];                       // für HUD: {type, text, points}
     this.wheelRot = 0;
     this.visPitch = 0;
-    if (atStart) this.yaw = 0;
   }
 
   forward(out = new THREE.Vector3()) { return out.set(Math.sin(this.yaw), 0, -Math.cos(this.yaw)); }
